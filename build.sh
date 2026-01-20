@@ -73,8 +73,10 @@ build() {
     echo "File at: '${FILEPATH}' does not exist"
     shutdown
   fi
+
+  OUTPUT="${BIN_DIR}/${NAME}"
   nasm -f elf64 -o "${OBJECTPATH}" "${FILEPATH}"
-  ld -o "${BIN_DIR}/${NAME}" ${OBJECTPATH}
+  ld -o "${OUTPUT}" "${OBJECTPATH}"
   set +x
 }
 
