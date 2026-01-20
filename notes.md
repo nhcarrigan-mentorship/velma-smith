@@ -32,3 +32,7 @@ the below is the bytes of data we are defining. The 10 is a newline character `\
 ![a table representing the various registers for arguments for syscalls](./img/syscallargs.png)
 
 [source](https://youtu.be/BWRR3Hecjao?si=jU0myc7HmExQ24Xj)
+
+[a good searchable table that leads back to the documentation](https://filippo.io/linux-syscall-table/)
+
+
