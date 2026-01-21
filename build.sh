@@ -1,9 +1,11 @@
 #! /bin/env bash
 
 # this script is just going to take whatever asm file we feed it and compile it as elf64
-# usage build.sh $FILENAME (include extension)
+# usage build.sh $FILENAME (include extension) $DEBUG_FLAG
 FILENAME=$1
 NAME="${FILENAME%.*}"
+
+DEBUG_FLAG=$2
 
 shutdown() {
   echo "something went wrong"
@@ -75,7 +77,7 @@ build() {
   fi
 
   OUTPUT="${BIN_DIR}/${NAME}"
-  nasm -f elf64 -o "${OBJECTPATH}" "${FILEPATH}"
+  nasm -f elf64 -g -F dwarf -o "${OBJECTPATH}" "${FILEPATH}"
   ld -o "${OUTPUT}" "${OBJECTPATH}"
   set +x
 }
