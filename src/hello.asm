@@ -1,6 +1,5 @@
 BITS 64
 
-
 %define SYSCALL_EXIT 60
 %ifdef FREEBSD
   %define SYSCALL_EXIT 1
