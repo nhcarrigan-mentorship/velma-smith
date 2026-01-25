@@ -2,3 +2,6 @@
 
 *.o
 
+# for the debugger generated file
+/src/hello
+
