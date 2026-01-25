@@ -15,9 +15,11 @@ shutdown() {
 continueOrNah() {
   read -rp "Continue? (y/n): " -n 1 choice
   if [[ "$choice" =~ ^[Yy] ]]; then
+    echo ""
     echo "continuing..."
   
   else
+    echo ""
     echo "shutting down..."
     shutdown
   fi
@@ -48,7 +50,7 @@ continueOrNah
 
 build() {
 
-  set -x
+  set +x
   
   readonly SCRIPT_DIR="$(cd -- "$(dirname -- "$BASH_SOURCE")" && pwd)"
 
@@ -77,7 +79,7 @@ build() {
   fi
 
   OUTPUT="${BIN_DIR}/${NAME}"
-  nasm -f elf64 -g -F dwarf -o "${OBJECTPATH}" "${FILEPATH}"
+  nasm -f elf64 -g -F dwarf -dLINUX -o "${OBJECTPATH}" "${FILEPATH}"
   ld -o "${OUTPUT}" "${OBJECTPATH}"
   set +x
 }
