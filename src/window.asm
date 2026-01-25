@@ -1,70 +1,67 @@
 BITS 64
-
+%define EXIT_ERROR 1
 %define SYSCALL_EXIT 60
+
+%define AF_UNIX 1
+%define SOCK_STREAM 1
+%define SYSCALL_SOCKET 41
+%define SYSCALL_CONNECT 42
+
+%define STDOUT 1
+%define SYSCALL_WRITE 1
+
 %ifdef FREEBSD
   %define SYSCALL_EXIT 1
 %endif
 
-%define SYSCALL_WRITE 1
-%define STDOUT 1
+section .rodata
+
+sun_path: db "/tmp/.X11-unix/X0", 0
+static sun_path:data
 
 section .text
-global _start
-_start:
-  xor rax, rax
-  call print_hello
-  jmp exit
+
+x11_connect_to_server:
+static x11_connect_to_server:function
+  push rbp
+  mov rbp, rsp
+
+  ; open a unix socket
+  mov rax, SYSCALL_SOCKET
+  mov rdi, AF_UNIX
+  mov rsi, SOCK_STREAM
+  mov rdx, 0
+  syscall
+  
+  cmp rax, 0
+  jle die
+
+  mov rdi, rax  ; store socket fd in `rdi`
+
+  sub rsp, 112
+
+  mov WORD [rsp], AF_UNIX
+
+  lea rsi, sun_path
+  mov r12, rdi
+  lea rdi, [rsp + 2]
+  cld
+  mov ecx, 19
+  rep movsb
+  
+  pop rbp
+  ret
+
 exit:
   mov rax, SYSCALL_EXIT
-  mov rdi, 0
+  xor edi, edi
+  syscall
+die:
+  mov rax, SYSCALL_EXIT
+  mov rdi, EXIT_ERROR
   syscall
 
-print_hello:
-    push rbp
-    mov rbp, rsp
+_start:
+global _start:function
 
-    sub rsp, 16  ; save 16 bytes of space on the stack
-    mov BYTE [rsp + 0], 'h'
-    mov BYTE [rsp + 1], 'e'
-    mov BYTE [rsp + 2], 'l'
-    mov BYTE [rsp + 3], 'l'
-    mov BYTE [rsp + 4], 'o'
-    mov BYTE [rsp + 5], ' '
-    
-    mov rax, SYSCALL_WRITE
-    mov rdi, STDOUT
-    lea rsi, [rsp]
-    mov rdx, 6
-    syscall
-
-    call print_world
-
-    add rsp, 16
-    pop rbp
-    ret
-
-print_world:
-    push rbp
-    mov rbp, rsp
-
-    sub rsp, 16
-    mov BYTE [rsp + 0], 'w'
-    mov BYTE [rsp + 1], 'o'
-    mov BYTE [rsp + 2], 'r'
-    mov BYTE [rsp + 3], 'l'
-    mov BYTE [rsp + 4], 'd'
-    mov BYTE [rsp + 5], 10
-
-    mov rax, SYSCALL_WRITE
-    mov rdi, STDOUT
-    lea rsi, [rsp]
-    mov rdx, 6
-    syscall
-
-    add rsp, 16
-
-    pop rbp
-    ret
-
-
-  
+  jmp exit
