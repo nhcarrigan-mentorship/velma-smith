@@ -23,19 +23,16 @@ section .text
 
 extern x11_connect_to_server
 extern x11_send_handshake
+extern load_xauth_env
 
 exit:
   mov rax, SYSCALL_EXIT
   xor edi, edi
   syscall
 
-die:
-  mov rax, SYSCALL_EXIT
-  mov rdi, EXIT_ERROR
-  syscall
-
 _start:
 global _start:function
   call x11_connect_to_server
+  mov rax, r12
   call x11_send_handshake
   jmp exit

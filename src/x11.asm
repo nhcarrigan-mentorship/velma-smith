@@ -15,8 +15,28 @@
 
 section .rodata
 
+env_not_found_mes: db "ENV var unable to load from stack", 10
+env_not_found_mes_len: equ $ - env_not_found_mes
+
 sun_path: db "/tmp/.X11-unix/X0", 0
 static sun_path:data
+
+section .bss
+
+x11_buffer_len equ 4096
+x11_buffer resb x11_buffer_len
+
+section .data
+
+x11_setup:
+  db 'l'
+  db 0
+  dw 11
+  dw 0
+  dw 0
+  dw 0
+  dw 0
+x11_setup_len equ $ - x11_setup
 
 section .text
 ; Create a UNIX domain socket and connect to the X11 server.
@@ -69,18 +89,73 @@ x11_connect_to_server:
 global x11_send_handshake
 x11_send_handshake:
   push rbp
+
   mov rbp, rsp
   
   sub rsp, 1<<15
 
   mov BYTE [rsp + 0], 'l'
   mov word [rsp + 2], 11
-
+  ; syscall write setup packet to initiate handshake
   mov rax, SYSCALL_WRITE
   mov rdi, rdi
- 
+  lea rsi, x11_setup
+  mov rdx, x11_setup_len
+  syscall
+
+  cmp rax, 12
+  jnz die
+
+  ; syscall read to read response
+  mov rax, 0
+  mov rdi, r12    ; the file descriptor of the socket
+  mov rsi, x11_buffer
+  mov rdx, x11_buffer_len
+  syscall
+
+  leave
+  ret
 
 
+; @param rdi - pointer to envp array
+;
+global load_xauth_env
+load_xauth_env:
+  push rbp
+  mov rbp, rsp
+
+.loop:
+  mov rdx, [rdi]  ; pointer to current env string
+  test rdx, rdx
+  jz .env_not_found   ; if it's null jump to failure
+  
+  mov rax, [rdx]
+  mov r8, `XAUTHORI`
+  cmp rax, r8
+  je .check_suffix  ; if match, check the "TY=" part
+
+.next_env:
+  add rdi, 8 ; Next pointer in envp array
+  jmp .loop
+
+.check_suffix:
+  mov eax, [rdx + 8]
+  and eax, 0x00FFFFFF ; clear the 4th byte to avoid garbage data like \0
+  mov r8d, `TY=`
+  cmp eax, r8d
+  jne .next_env  ; handle as a partial match if necessary
+
+  lea rax, [rdx + 11] ; Success! return pointer to the value
+  jmp .done
+.env_not_found:
+  mov rax, SYSCALL_WRITE
+  mov rdi, STDOUT
+  mov rsi, env_not_found_mes
+  mov rdx, env_not_found_mes_len
+  syscall
+
+  jmp die
+.done: 
   leave
   ret
 
