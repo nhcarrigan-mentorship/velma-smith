@@ -26,16 +26,19 @@ section .bss
 x11_buffer_len equ 4096
 x11_buffer resb x11_buffer_len
 
+
 section .data
 
 x11_setup:
-  db 'l'
-  db 0
-  dw 11
-  dw 0
-  dw 0
-  dw 0
-  dw 0
+  db 'l', 0 ; little endian and pad bite 
+  dw 11, 0 ; major and minor Version 11.0
+  dw 18 ; auth name length
+  dw 16 ; auth data length
+  dw 0  ; final pad before strings
+
+  db "MIT-MAGIC-COOKIE-1", 0, 0 ; Name and 2 byte padding
+cookie_space:
+  times 16 db 0 ; This gets filled from get_cookie_from_file
 x11_setup_len equ $ - x11_setup
 
 section .text
