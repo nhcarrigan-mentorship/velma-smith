@@ -37,11 +37,17 @@ x11_setup:
   dw 0  ; final pad before strings
 
   db "MIT-MAGIC-COOKIE-1", 0, 0 ; Name and 2 byte padding
+global cookie_space
 cookie_space:
   times 16 db 0 ; This gets filled from get_cookie_from_file
 x11_setup_len equ $ - x11_setup
 
 section .text
+die:
+  mov rax, SYSCALL_EXIT
+  mov rdi, EXIT_ERROR
+  syscall
+
 ; Create a UNIX domain socket and connect to the X11 server.
 ; @returns The Socket file descriptor
 global x11_connect_to_server
@@ -95,18 +101,17 @@ x11_send_handshake:
 
   mov rbp, rsp
   
-  sub rsp, 1<<15
-
-  mov BYTE [rsp + 0], 'l'
-  mov word [rsp + 2], 11
   ; syscall write setup packet to initiate handshake
   mov rax, SYSCALL_WRITE
   mov rdi, rdi
   lea rsi, x11_setup
   mov rdx, x11_setup_len
   syscall
-
-  cmp rax, 12
+  ; 12 bytes for the intial header
+  ; 20 bytes for the auth name
+  ; 16 bytes for the cookie data 
+  ; 48 bytes in total
+  cmp rax, 48
   jnz die
 
   ; syscall read to read response
@@ -118,53 +123,5 @@ x11_send_handshake:
 
   leave
   ret
-
-
-; @param rdi - pointer to envp array
-;
-global load_xauth_env
-load_xauth_env:
-  push rbp
-  mov rbp, rsp
-
-.loop:
-  mov rdx, [rdi]  ; pointer to current env string
-  test rdx, rdx
-  jz .env_not_found   ; if it's null jump to failure
-  
-  mov rax, [rdx]
-  mov r8, `XAUTHORI`
-  cmp rax, r8
-  je .check_suffix  ; if match, check the "TY=" part
-
-.next_env:
-  add rdi, 8 ; Next pointer in envp array
-  jmp .loop
-
-.check_suffix:
-  mov eax, [rdx + 8]
-  and eax, 0x00FFFFFF ; clear the 4th byte to avoid garbage data like \0
-  mov r8d, `TY=`
-  cmp eax, r8d
-  jne .next_env  ; handle as a partial match if necessary
-
-  lea rax, [rdx + 11] ; Success! return pointer to the value
-  jmp .done
-.env_not_found:
-  mov rax, SYSCALL_WRITE
-  mov rdi, STDOUT
-  mov rsi, env_not_found_mes
-  mov rdx, env_not_found_mes_len
-  syscall
-
-  jmp die
-.done: 
-  leave
-  ret
-
-die:
-  mov rax, SYSCALL_EXIT
-  mov rdi, EXIT_ERROR
-  syscall
 
 

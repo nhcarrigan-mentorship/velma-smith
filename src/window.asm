@@ -24,6 +24,7 @@ section .text
 extern x11_connect_to_server
 extern x11_send_handshake
 extern load_xauth_env
+extern get_cookie_from_file
 
 exit:
   mov rax, SYSCALL_EXIT
@@ -32,6 +33,12 @@ exit:
 
 _start:
 global _start:function
+  ; moving past argc and argv to envp
+  mov rsi, [rsp]
+  lea rdi, [rsp + 8 + rsi*8 + 8]
+
+  call load_xauth_env
+  call get_cookie_from_file
   call x11_connect_to_server
   mov rax, r12
   call x11_send_handshake
