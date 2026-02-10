@@ -1,5 +1,7 @@
 BUILD ?= debug
 
+PROJECT ?= window
+
 ASM = nasm
 # Flags based on build type
 ifeq ($(BUILD),debug)
@@ -17,13 +19,13 @@ else
 endif
 LD = ld
 
-SRC_DIR = src
-BUILD_DIR = bin/$(BUILD)
+SRC_DIR = src/$(PROJECT)
+BUILD_DIR = bin/$(PROJECT)/$(BUILD)
 
-SRC = $(SRC_DIR)/window.asm $(SRC_DIR)/x11.asm $(SRC_DIR)/auth.asm
+SRC = $(wildcard $(SRC_DIR)/*.asm)
 OBJ = $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.o,$(SRC))
 
-TARGET = $(BUILD_DIR)/window
+TARGET = $(BUILD_DIR)/$(PROJECT)
 
 all: $(TARGET)
 
