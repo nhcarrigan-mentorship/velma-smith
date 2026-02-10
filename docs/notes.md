@@ -72,6 +72,23 @@ We then use the instruction syscall and check rax for the return value, 0 usuall
 
 [a good searchable table that leads back to the documentation](https://filippo.io/linux-syscall-table/)
 
+### Looking up opcodes for arguments
+
+Low and behold it's all on your system. in the below example we lookup opcodes for a unix socket
+
+```bash
+grep -R "PF_LOCAL" /usr/include/bits/socket.h
+```
+
+the output
+
+```txt
+#define PF_LOCAL        1       /* Local to host (pipes and file-domain).  */
+#define PF_UNIX         PF_LOCAL /* POSIX name for PF_LOCAL.  */
+#define PF_FILE         PF_LOCAL /* Another non-standard name for PF_LOCAL.  */
+#define AF_LOCAL        PF_LOCAL
+```
+
 ## Instructions and Other Documentation
 
 [https://web.stanford.edu/class/cs107/guide/x86-64.html](https://web.stanford.edu/class/cs107/guide/x86-64.html)
